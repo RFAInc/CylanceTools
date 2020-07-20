@@ -109,7 +109,7 @@ function Uninstall-Cylance {
                 Case = 1
                 Pattern = $null
                 Like = 'MsiExec.exe /X{*'
-                Replacement = '{0} /qn /norestart'
+                Replacement = '{0} /qn /norestart /log "c:\windows\temp\cylance-remove.log"'
             }
             [pscustomobject]@{
                 Case = 2
