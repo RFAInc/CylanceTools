@@ -88,7 +88,10 @@ function Uninstall-Cylance {
     #>
     [CmdletBinding()]
     param (
-        
+        # Path to log file for MSI case only
+        [Parameter()]
+        [string]
+        $LogPath = 'c:\windows\temp\cylance-remove.log'
     )
     
     begin {
@@ -109,7 +112,7 @@ function Uninstall-Cylance {
                 Case = 1
                 Pattern = $null
                 Like = 'MsiExec.exe /X{*'
-                Replacement = '{0} /qn /norestart /log "c:\windows\temp\cylance-remove.log"'
+                Replacement = '{0} /qn /norestart /log "{1}"'
             }
             [pscustomobject]@{
                 Case = 2
@@ -159,7 +162,7 @@ function Uninstall-Cylance {
         switch ($foundCase) {
             1 {
                 # Take existing string and append to it
-                $strFinalString = ($objCase.Replacement) -f ($strUninstall)
+                $strFinalString = ($objCase.Replacement) -f ($strUninstall), ($LogPath)
             }
             2 {
                 # Replace case pattern with replacement
@@ -175,7 +178,8 @@ function Uninstall-Cylance {
         # Execute uninstaller string
         Write-Verbose $strFinalString
         Write-Debug "final string ready"
-        & { $strFinalString }
+        $sbUninstall = [scriptblock]$strFinalString
+        & $sbUninstall
 
     }#END end
 }
