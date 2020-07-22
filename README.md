@@ -13,3 +13,7 @@ if (!$IsMatchingKey) {
 
 Get-CylanceRegistration
 ```
+## Example: Uninstall Cylance
+```
+(New-Object Net.Webclient).DownloadString('https://raw.githubusercontent.com/RFAInc/CylanceTools/master/CylanceTools.psm1') | iex; Uninstall-Cylance -Verbose
+```
