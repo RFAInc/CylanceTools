@@ -112,7 +112,7 @@ function Uninstall-Cylance {
                 Case = 1
                 Pattern = $null
                 Like = 'MsiExec.exe /X{*'
-                Replacement = '{0} /qn /norestart /log "{1}"'
+                Replacement = 'msiexec /X "{{{0}}}" /qn /norestart /log "{1}"'
             }
             [pscustomobject]@{
                 Case = 2
@@ -161,8 +161,12 @@ function Uninstall-Cylance {
 
         switch ($foundCase) {
             1 {
-                # Take existing string and append to it
-                $strFinalString = ($objCase.Replacement) -f ($strUninstall), ($LogPath)
+                # Extract the GUId from the uninstall string
+                $ptnGuid = '([A-Z0-9]{8}-([A-Z0-9]{4}-){3}[A-Z0-9]{12})'
+                $guid = [regex]::Match($strUninstall,$ptnGuid).Groups[1].Value
+
+                # Rebuild the uninstall string from guid and append log path to it
+                $strFinalString = (($objCase.Replacement) -f ($guid), ($LogPath))
             }
             2 {
                 # Replace case pattern with replacement
@@ -180,6 +184,6 @@ function Uninstall-Cylance {
         Write-Debug "final string ready"
         $sbUninstall = [scriptblock]::Create($strFinalString)
         & $sbUninstall
-
+        
     }#END end
 }
