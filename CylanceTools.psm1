@@ -183,6 +183,7 @@ function Uninstall-Cylance {
         Write-Verbose $strFinalString
         Write-Debug "final string ready"
         Try {
+            $ErrorActionPreference = 'Stop'
             $sbUninstall = [scriptblock]::Create($strFinalString)
             & $sbUninstall
         } Catch {
