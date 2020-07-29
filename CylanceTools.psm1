@@ -182,8 +182,14 @@ function Uninstall-Cylance {
         # Execute uninstaller string
         Write-Verbose $strFinalString
         Write-Debug "final string ready"
-        $sbUninstall = [scriptblock]::Create($strFinalString)
-        & $sbUninstall
+        Try {
+            $sbUninstall = [scriptblock]::Create($strFinalString)
+            & $sbUninstall
+        } Catch {
+            $strFinalString = '& ' + $strFinalString
+            $sbUninstall = [scriptblock]::Create($strFinalString)
+            & $sbUninstall
+        }
         
     }#END end
 }
