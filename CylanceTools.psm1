@@ -210,3 +210,53 @@ function Uninstall-Cylance {
     }
 
 }
+
+function Receive-RfaCylanceMsi {
+
+    <#
+    .SYNOPSIS
+    Downloads the MSI installer for Cylance.
+    .DESCRIPTION
+    Uses the known location of the latest version of the Cylance MSI installer and downloads it to LabTech's package folder.
+    .PARAMETER OsBitness
+    Bitness of the OS
+    .PARAMETER Path
+    Target path for the download, not including filename
+    #>
+    [CmdletBinding()]
+
+    param(
+        # Bitness of the OS
+        [Parameter()]
+        [ValidateSet(32,64)]
+        [int]
+        $OsBitness = 64,
+
+        # Target path for the download, not including filename
+        [Parameter()]
+        [string]
+        $Path = 'C:\Windows\LtSvc\packages\Cylance'
+    )
+
+    $Uri = switch ($OsBitness) {
+        64 {'https://automate.rfa.com/LabTech/Transfer/Software/Cylance/CylanceProtect_x64.msi'}
+        32 {'https://automate.rfa.com/LabTech/Transfer/Software/Cylance/CylanceProtect_x86.msi'}
+        Default {throw 'unhandled OS Bitness value'}
+    }
+
+    # Grab the filename from the download URI
+    $Filename = Split-Path $Uri -Leaf
+
+    # Ensure the folder for the download exists
+    if (Test-Path $Path) {} else {
+        New-Item -Path $Path -ItemType Directory -Force
+    }
+
+    # Download the file
+    $FullName = Join-Path $Path $Filename
+    (New-Object Net.WebClient).DownloadFile($Uri,$FullName)
+
+    # Return the resultant file object
+    Get-Item $FullName
+
+}
