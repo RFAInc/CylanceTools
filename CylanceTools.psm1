@@ -70,12 +70,12 @@ function Set-CylanceRegistration
 # DRAFT
 
 
-function Uninstall-Cylance {
+function Get-CylanceUninstallString {
     <#
     .SYNOPSIS
-    Removes the application from the local system.
+    Helps to silently remove the application from the local system.
     .DESCRIPTION
-    Searches the local registry for an uninstall string, classifies the string based on path or GUID, and executes a command with silent options.
+    Searches the local registry for an uninstall string, classifies the string based on path or GUID, and returns a command with silent options.
     .NOTES
     Examples of actual uninstall strings found on devices:
     Logs of attempts are showing the following for the invoked:
@@ -179,18 +179,34 @@ function Uninstall-Cylance {
             Default {throw 'unhandled case'}
         }#END switch ($foundCase)
 
-        # Execute uninstaller string
-        Write-Verbose $strFinalString
-        Write-Debug "final string ready"
-        Try {
-            $ErrorActionPreference = 'Stop'
-            $sbUninstall = [scriptblock]::Create($strFinalString)
-            & $sbUninstall
-        } Catch {
-            [string]$strFinalString = '& ' + $strFinalString
-            $sbUninstall = [scriptblock]::Create($strFinalString)
-            & $sbUninstall
-        }
+        Write-Output $strFinalString
         
     }#END end
+}
+
+
+function Uninstall-Cylance {
+    <#
+    .SYNOPSIS
+    Removes the application from the local system.
+    .DESCRIPTION
+    Searches the local registry for an uninstall string, classifies the string based on path or GUID, and executes a command with silent options.
+    #>
+    [CmdletBinding()]
+    
+    $strUninstall = Get-CylanceUninstallString
+
+    # Execute uninstaller string
+    Write-Verbose $strUninstall
+    Write-Debug "final string ready: `$strFinalString"
+    Try {
+        $ErrorActionPreference = 'Stop'
+        $sbUninstall = [scriptblock]::Create($strUninstall)
+        & $sbUninstall
+    } Catch {
+        [string]$strFinalString = '& ' + $strUninstall
+        $sbUninstall = [scriptblock]::Create($strFinalString)
+        & $sbUninstall
+    }
+
 }
