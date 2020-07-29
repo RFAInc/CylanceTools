@@ -166,15 +166,15 @@ function Uninstall-Cylance {
                 $guid = [regex]::Match($strUninstall,$ptnGuid).Groups[1].Value
 
                 # Rebuild the uninstall string from guid and append log path to it
-                $strFinalString = (($objCase.Replacement) -f ($guid), ($LogPath))
+                [string]$strFinalString = (($objCase.Replacement) -f ($guid), ($LogPath))
             }
             2 {
                 # Replace case pattern with replacement
-                $strFinalString = $strUninstall -replace ($objCase.Pattern), ($objCase.Replacement)
+                [string]$strFinalString = $strUninstall -replace ($objCase.Pattern), ($objCase.Replacement)
             }
             3 {
                 # This case requires no modification
-                $strFinalString = $strUninstall
+                [string]$strFinalString = $strUninstall
             }
             Default {throw 'unhandled case'}
         }#END switch ($foundCase)
@@ -187,7 +187,7 @@ function Uninstall-Cylance {
             $sbUninstall = [scriptblock]::Create($strFinalString)
             & $sbUninstall
         } Catch {
-            $strFinalString = '& ' + $strFinalString
+            [string]$strFinalString = '& ' + $strFinalString
             $sbUninstall = [scriptblock]::Create($strFinalString)
             & $sbUninstall
         }
