@@ -88,7 +88,6 @@ function Test-CylanceInstall {
         # Find the process and test its EXE against the known EXE path.
         if ($Process) {
             $IsInstalled =$true
-            continue
         } else {
             Write-Verbose "No Process exists."
         }
@@ -96,11 +95,15 @@ function Test-CylanceInstall {
         # Find the service and test its EXE against the known EXE path.
         if ($Service.count -eq 1) {
 
-            $thisExePath = (Get-WmiObject win32_Service -Filter "Name=$($Service.Name)").PathName.Trim('"')
+            $thisExePath = (
+                Get-WmiObject win32_Service |
+                    Where-Object {
+                        $_.Name -eq ($Service.Name)
+                    }
+            ).PathName.Trim('"')
 
             if ($knownExePath -eq $thisExePath) {
                 $IsInstalled =$true
-                continue
             }
 
         } elseif ($Service.count -gt 1) {
@@ -108,11 +111,15 @@ function Test-CylanceInstall {
             # loop thru
             foreach ($svc in $Service) {
                 
-                $thisExePath = (Get-WmiObject win32_Service -Filter "Name=$($svc.Name)").PathName.Trim('"')
+                $thisExePath = (
+                    Get-WmiObject win32_Service |
+                        Where-Object {
+                            $_.Name -eq ($Service.Name)
+                        }
+                ).PathName.Trim('"')
                 
                 if ($knownExePath -eq $thisExePath) {
                     $IsInstalled =$true
-                    continue
                 }
 
             }
@@ -124,14 +131,12 @@ function Test-CylanceInstall {
         # Do some simple path checks
         if (Get-Item $knownExePath -ea 0) {
             $IsInstalled =$true
-            continue
         } else {
             Write-Verbose "No Path to EXE exists."
         }
 
         if (Get-Item $knownRegPath -ea 0) {
             $IsInstalled =$true
-            continue
         } else {
             Write-Verbose "No Registry path exists."
         }
@@ -275,7 +280,8 @@ function Uninstall-Cylance {
     Write-Verbose $strUninstall
     Write-Debug "final string ready: `$strUninstall"
     Try {
-
+        
+        $origErrorActionPreference = $ErrorActionPreference
         Write-Verbose [string]('Attempting Command (1): ' + $strUninstall)
         Invoke-Expression $strUninstall -ea Stop
 
@@ -294,6 +300,8 @@ function Uninstall-Cylance {
             & $sbUninstall
         }
 
+    } Finally {
+        $ErrorActionPreference = $origErrorActionPreference
     }
 
     # Check the installer finished OK
@@ -301,6 +309,8 @@ function Uninstall-Cylance {
     if (Test-CylanceInstall) {
         throw "Cylance failed to remove from $($env:COMPUTERNAME)!"
         Write-Verbose ($Error.Exception.Message)
+    } else {
+        Write-Verbose "Cylance successfully removed from $($env:COMPUTERNAME)."
     }
 
 }
