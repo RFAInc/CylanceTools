@@ -77,9 +77,9 @@ function Test-CylanceInstall {
 
     Begin {
         $knownRegPath = "HKLM:\SOFTWARE\Cylance\Desktop"
-        $knownExePath = Join-Path $env:ProgramFiles "Cylance\Desktop\cyprotect.exe"
+        $knownExePath = Join-Path $env:ProgramFiles "Cylance\Desktop\CylanceSvc.exe"
         $Service = Get-Service -Name Cy*
-        $Process = Get-Process cyprotect -ea 0
+        $Process = Get-Process CylanceSvc -ea 0
         $IsInstalled = $false
     }
 
@@ -103,9 +103,9 @@ function Test-CylanceInstall {
                     }
             ).PathName.Trim('"')
 
-            if ($knownExePath -eq $thisExePath) {
-                $IsInstalled =$true
+            if ($thisExePath -like '*cylance*') {
                 Write-Verbose "Service exists."
+                $IsInstalled =$true
             }
 
         } elseif ($Service.count -gt 1) {
@@ -120,9 +120,9 @@ function Test-CylanceInstall {
                         }
                 ).PathName.Trim('"')
                 
-                if ($knownExePath -eq $thisExePath) {
-                    $IsInstalled =$true
+                if ($thisExePath -like '*cylance*') {
                     Write-Verbose "Service exists."
+                    $IsInstalled =$true
                 }
 
             }
@@ -134,16 +134,14 @@ function Test-CylanceInstall {
         # Do some simple path checks
         if (Get-Item $knownExePath -ea 0) {
             $IsInstalled =$true
-            Write-Verbose "Path to EXE exists."
-        } else {
-            Write-Verbose "No Path to EXE exists."
+            Write-Verbose "Known Path to EXE exists."
         }
 
         if (Get-Item $knownRegPath -ea 0) {
             $IsInstalled =$true
-            Write-Verbose "Registry path exists."
+            Write-Verbose "Known Registry path exists."
         } else {
-            Write-Verbose "No Registry path exists."
+            Write-Verbose "No known Registry path exists."
         }
     }
 
