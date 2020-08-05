@@ -88,6 +88,7 @@ function Test-CylanceInstall {
         # Find the process and test its EXE against the known EXE path.
         if ($Process) {
             $IsInstalled =$true
+            Write-Verbose "Process exists."
         } else {
             Write-Verbose "No Process exists."
         }
@@ -104,6 +105,7 @@ function Test-CylanceInstall {
 
             if ($knownExePath -eq $thisExePath) {
                 $IsInstalled =$true
+                Write-Verbose "Service exists."
             }
 
         } elseif ($Service.count -gt 1) {
@@ -120,6 +122,7 @@ function Test-CylanceInstall {
                 
                 if ($knownExePath -eq $thisExePath) {
                     $IsInstalled =$true
+                    Write-Verbose "Service exists."
                 }
 
             }
@@ -131,12 +134,14 @@ function Test-CylanceInstall {
         # Do some simple path checks
         if (Get-Item $knownExePath -ea 0) {
             $IsInstalled =$true
+            Write-Verbose "Path to EXE exists."
         } else {
             Write-Verbose "No Path to EXE exists."
         }
 
         if (Get-Item $knownRegPath -ea 0) {
             $IsInstalled =$true
+            Write-Verbose "Registry path exists."
         } else {
             Write-Verbose "No Registry path exists."
         }
@@ -306,7 +311,8 @@ function Uninstall-Cylance {
 
     # Check the installer finished OK
     Start-Sleep -Seconds 15
-    if (Test-CylanceInstall) {
+    $Verbose = if ($VerbosePreference = 'Continue') {$true} else {$false}
+    if (Test-CylanceInstall -Verbose:$Verbose) {
         throw "Cylance failed to remove from $($env:COMPUTERNAME)!"
         Write-Verbose ($Error.Exception.Message)
     } else {
