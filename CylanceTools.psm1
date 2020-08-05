@@ -69,6 +69,80 @@ function Set-CylanceRegistration
 
 # DRAFT
 
+function Test-CylanceInstall {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+    )
+
+    Begin {
+        $knownRegPath = "HKLM:\SOFTWARE\Cylance\Desktop"
+        $knownExePath = Join-Path $env:ProgramFiles "Cylance\Desktop\cyprotect.exe"
+        $Service = Get-Service -Name Cy*
+        $Process = Get-Process cyprotect -ea 0
+        $IsInstalled = $false
+    }
+
+    Process {
+        
+        # Find the process and test its EXE against the known EXE path.
+        if ($Process) {
+            $IsInstalled =$true
+            continue
+        } else {
+            Write-Verbose "No Process exists."
+        }
+
+        # Find the service and test its EXE against the known EXE path.
+        if ($Service.count -eq 1) {
+
+            $thisExePath = (Get-WmiObject win32_Service -Filter "Name=$($Service.Name)").PathName.Trim('"')
+
+            if ($knownExePath -eq $thisExePath) {
+                $IsInstalled =$true
+                continue
+            }
+
+        } elseif ($Service.count -gt 1) {
+            
+            # loop thru
+            foreach ($svc in $Service) {
+                
+                $thisExePath = (Get-WmiObject win32_Service -Filter "Name=$($svc.Name)").PathName.Trim('"')
+                
+                if ($knownExePath -eq $thisExePath) {
+                    $IsInstalled =$true
+                    continue
+                }
+
+            }
+
+        } else {
+            Write-Verbose "No Service exists."
+        }
+
+        # Do some simple path checks
+        if (Get-Item $knownExePath -ea 0) {
+            $IsInstalled =$true
+            continue
+        } else {
+            Write-Verbose "No Path to EXE exists."
+        }
+
+        if (Get-Item $knownRegPath -ea 0) {
+            $IsInstalled =$true
+            continue
+        } else {
+            Write-Verbose "No Registry path exists."
+        }
+    }
+
+    End {
+        
+        Write-Output $IsInstalled
+
+    }
+}
 
 function Get-CylanceUninstallString {
     <#
@@ -184,13 +258,14 @@ function Get-CylanceUninstallString {
     }#END end
 }
 
-
 function Uninstall-Cylance {
     <#
     .SYNOPSIS
     Removes the application from the local system.
     .DESCRIPTION
-    Searches the local registry for an uninstall string, classifies the string based on path or GUID, and executes a command with silent options.
+    Searches the local registry for an uninstall string,
+    classifies the string based on path or GUID, and executes
+    a command with silent options and optional verbose output.
     #>
     [CmdletBinding()]
     
@@ -198,15 +273,34 @@ function Uninstall-Cylance {
 
     # Execute uninstaller string
     Write-Verbose $strUninstall
-    Write-Debug "final string ready: `$strFinalString"
+    Write-Debug "final string ready: `$strUninstall"
     Try {
-        $ErrorActionPreference = 'Stop'
-        $sbUninstall = [scriptblock]::Create($strUninstall)
-        & $sbUninstall
+
+        Write-Verbose [string]('Attempting Command (1): ' + $strUninstall)
+        Invoke-Expression $strUninstall -ea Stop
+
     } Catch {
-        [string]$strFinalString = '& ' + $strUninstall
-        $sbUninstall = [scriptblock]::Create($strFinalString)
-        & $sbUninstall
+
+        Try {
+            $ErrorActionPreference = 'Stop'
+            $sbUninstall = [scriptblock]::Create($strUninstall)
+            Write-Verbose [string]('Attempting Command (2): ' + $strUninstall)
+            & $sbUninstall
+        } Catch {
+            $ErrorActionPreference = 'SilentlyContinue'
+            [string]$strFinalString = '& ' + $strUninstall
+            $sbUninstall = [scriptblock]::Create($strFinalString)
+            Write-Verbose [string]('Attempting Command (3): ' + $strUninstall)
+            & $sbUninstall
+        }
+
+    }
+
+    # Check the installer finished OK
+    Start-Sleep -Seconds 15
+    if (Test-CylanceInstall) {
+        throw "Cylance failed to remove from $($env:COMPUTERNAME)!"
+        Write-Verbose ($Error.Exception.Message)
     }
 
 }
@@ -229,7 +323,7 @@ function Receive-RfaCylanceMsi {
         # Bitness of the OS
         [Parameter()]
         [ValidateSet(32,64)]
-        [int]
+        [int16]
         $OsBitness = 64,
 
         # Target path for the download, not including filename
