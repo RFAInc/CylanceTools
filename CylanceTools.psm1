@@ -215,6 +215,7 @@ function Get-CylanceUninstallString {
             Where-Object {$_.Name -like 'Cylance*'} |
             Select-Object -ExpandProperty UninstallCommand
         Write-Debug "found $($strUninstall)"
+        Write-Verbose "Uninstall string found: $($strUninstall)"
     }
     
     process {
@@ -241,6 +242,7 @@ function Get-CylanceUninstallString {
         # Isolate my case
         $objCase = $Cases | Where-Object {$_.Case -eq $foundCase}
 
+        Write-Verbose "Processing final Uninstall string..."
         switch ($foundCase) {
             1 {
                 # Extract the GUId from the uninstall string
@@ -285,7 +287,7 @@ function Uninstall-Cylance {
     Try {
         
         $origErrorActionPreference = $ErrorActionPreference
-        Write-Verbose [string]('Attempting Command (1): ' + $strUninstall)
+        Write-Verbose -Message [string]('Attempting Command (1): ' + $strUninstall)
         Invoke-Expression $strUninstall -ea Stop
 
     } Catch {
@@ -293,13 +295,13 @@ function Uninstall-Cylance {
         Try {
             $ErrorActionPreference = 'Stop'
             $sbUninstall = [scriptblock]::Create($strUninstall)
-            Write-Verbose [string]('Attempting Command (2): ' + $strUninstall)
+            Write-Verbose -Message [string]('Attempting Command (2): ' + $strUninstall)
             & $sbUninstall
         } Catch {
             $ErrorActionPreference = 'SilentlyContinue'
             [string]$strFinalString = '& ' + $strUninstall
             $sbUninstall = [scriptblock]::Create($strFinalString)
-            Write-Verbose [string]('Attempting Command (3): ' + $strUninstall)
+            Write-Verbose -Message [string]('Attempting Command (3): ' + $strUninstall)
             & $sbUninstall
         }
 
