@@ -1,7 +1,6 @@
 function Get-CylanceRegistration {
-    [CmdletBinding()]
-    [OutputType([string])]
     param(
+        [switch]$Verbose
     )
 
     Begin {
@@ -18,8 +17,6 @@ function Get-CylanceRegistration {
 }
 
 function Test-CylanceRegistration {
-    [CmdletBinding()]
-    [OutputType([bool])]
     param(
         # Install Token for Cylance
         [Parameter(Mandatory=$true)]
@@ -41,7 +38,6 @@ function Test-CylanceRegistration {
 
 function Set-CylanceRegistration
 {
-    [CmdletBinding()]
     param(
         # Install Token for Cylance
         [Parameter(Mandatory=$true)]
@@ -70,9 +66,8 @@ function Set-CylanceRegistration
 # DRAFT
 
 function Test-CylanceInstall {
-    [CmdletBinding()]
-    [OutputType([bool])]
     param(
+        [switch]$Verbose
     )
 
     Begin {
@@ -88,9 +83,9 @@ function Test-CylanceInstall {
         # Find the process and test its EXE against the known EXE path.
         if ($Process) {
             $IsInstalled =$true
-            Write-Verbose "Process exists."
+            Write-Verbose "Process exists." -Verbose:$Verbose
         } else {
-            Write-Verbose "No Process exists."
+            Write-Verbose "No Process exists." -Verbose:$Verbose
         }
 
         # Find the service and test its EXE against the known EXE path.
@@ -104,7 +99,7 @@ function Test-CylanceInstall {
             ).PathName.Trim('"')
 
             if ($thisExePath -like '*cylance*') {
-                Write-Verbose "Service exists."
+                Write-Verbose "Service exists." -Verbose:$Verbose
                 $IsInstalled =$true
             }
 
@@ -121,27 +116,27 @@ function Test-CylanceInstall {
                 ).PathName.Trim('"')
                 
                 if ($thisExePath -like '*cylance*') {
-                    Write-Verbose "Service exists."
+                    Write-Verbose "Service exists." -Verbose:$Verbose
                     $IsInstalled =$true
                 }
 
             }
 
         } else {
-            Write-Verbose "No Service exists."
+            Write-Verbose "No Service exists." -Verbose:$Verbose
         }
 
         # Do some simple path checks
         if (Get-Item $knownExePath -ea 0) {
             $IsInstalled =$true
-            Write-Verbose "Known Path to EXE exists."
+            Write-Verbose "Known Path to EXE exists." -Verbose:$Verbose
         }
 
         if (Get-Item $knownRegPath -ea 0) {
             $IsInstalled =$true
-            Write-Verbose "Known Registry path exists."
+            Write-Verbose "Known Registry path exists." -Verbose:$Verbose
         } else {
-            Write-Verbose "No known Registry path exists."
+            Write-Verbose "No known Registry path exists." -Verbose:$Verbose
         }
     }
 
@@ -168,12 +163,13 @@ function Get-CylanceUninstallString {
 
     "C:\ProgramData\Package Cache{0074de7b-882e-42ef-bf12-6da746eeb15f}\CylanceProtectSetup.exe" /uninstall
     #>
-    [CmdletBinding()]
     param (
         # Path to log file for MSI case only
         [Parameter()]
         [string]
-        $LogPath = 'c:\windows\temp\cylance-remove.log'
+        $LogPath = 'c:\windows\temp\cylance-remove.log',
+        
+        [switch]$Verbose
     )
     
     begin {
@@ -194,8 +190,7 @@ function Get-CylanceUninstallString {
                 Case = 1
                 Pattern = $null
                 Like = 'MsiExec.exe /X{*'
-                #Replacement = 'msiexec /X "{{{0}}}" /qn /norestart /log "{1}"'
-                Replacement = 'msiexec /X "{{{0}}}" /qn /norestart'
+                Replacement = 'msiexec /X "{{{0}}}" /qn /norestart /log "{1}"' 
                 
             }
             [pscustomobject]@{
@@ -216,8 +211,7 @@ function Get-CylanceUninstallString {
         $strUninstall = Get-InstalledSoftware |
             Where-Object {$_.Name -like 'Cylance*'} |
             Select-Object -ExpandProperty UninstallCommand
-        Write-Debug "found $($strUninstall)"
-        Write-Verbose "Uninstall string found: $($strUninstall)"
+        Write-Verbose "Uninstall string found: $($strUninstall)" -Verbose:$Verbose
     }
     
     process {
@@ -231,11 +225,9 @@ function Get-CylanceUninstallString {
         foreach ($Case in $Cases) {
             $thisCase = $Case.Case
             if ($strUninstall -match ($Case.Pattern) -and ($Case.Pattern)) {
-                Write-Debug "match case"
                 $foundCase = $thisCase
                 continue
             } elseif ($strUninstall -like ($Case.Like) -and ($Case.Like)) {
-                Write-Debug "like case"
                 $foundCase = $thisCase
                 continue
             }
@@ -244,7 +236,7 @@ function Get-CylanceUninstallString {
         # Isolate my case
         $objCase = $Cases | Where-Object {$_.Case -eq $foundCase}
 
-        Write-Verbose "Processing final Uninstall string..."
+        Write-Verbose "Processing final Uninstall string..." -Verbose:$Verbose
         switch ($foundCase) {
             1 {
                 # Extract the GUId from the uninstall string
@@ -252,8 +244,7 @@ function Get-CylanceUninstallString {
                 $guid = [regex]::Match($strUninstall,$ptnGuid).Groups[1].Value
 
                 # Rebuild the uninstall string from guid and append log path to it
-                #[string]$strFinalString = (($objCase.Replacement) -f ($guid), ($LogPath))
-                [string]$strFinalString = (($objCase.Replacement) -f ($guid))
+                [string]$strFinalString = (($objCase.Replacement) -f ($guid), ($LogPath))
             }
             2 {
                 # Replace case pattern with replacement
@@ -280,46 +271,20 @@ function Uninstall-Cylance {
     classifies the string based on path or GUID, and executes
     a command with silent options and optional verbose output.
     #>
-    [CmdletBinding()]
+    param([switch]$Verbose)
     
     $strUninstall = Get-CylanceUninstallString
 
     # Execute uninstaller string
-    Write-Verbose $strUninstall
-    Write-Debug "final string ready: `$strUninstall"
-    Try {
-        
-        $origErrorActionPreference = $ErrorActionPreference
-        Write-Verbose -Message [string]('Attempting Command (1): ' + $strUninstall)
-        Invoke-Command $strUninstall -ea Stop
-
-    } Catch {
-
-        Try {
-            $ErrorActionPreference = 'Stop'
-            #$sbUninstall = [scriptblock]::Create($strUninstall)
-            Write-Verbose -Message [string]('Attempting Command (2): ' + $strUninstall)
-            Invoke-Command $strUninstall
-        } Catch {
-            $ErrorActionPreference = 'SilentlyContinue'
-            #[string]$strFinalString = '& ' + $strUninstall
-            #$sbUninstall = [scriptblock]::Create($strFinalString)
-            Write-Verbose -Message [string]('Attempting Command (3): ' + $strUninstall)
-            Invoke-Command $strUninstall
-        }
-
-    } Finally {
-        $ErrorActionPreference = $origErrorActionPreference
-    }
+    Write-Verbose "final string ready: `$strUninstall" -Verbose:$Verbose
+    Invoke-Command $strUninstall -ea 0 -ev errRemoval
 
     # Check the installer finished OK
     Start-Sleep -Seconds 15
-    $Verbose = if ($VerbosePreference = 'Continue') {$true} else {$false}
     if (Test-CylanceInstall -Verbose:$Verbose) {
-        throw "Cylance failed to remove from $($env:COMPUTERNAME)!"
-        Write-Verbose ($Error.Exception.Message)
+        throw "Cylance failed to remove from $($env:COMPUTERNAME)! [$($errRemoval.Exception.Message)]"
     } else {
-        Write-Verbose "Cylance successfully removed from $($env:COMPUTERNAME)."
+        Write-Verbose "Cylance successfully removed from $($env:COMPUTERNAME)." -Verbose:$Verbose
     }
 
 }
