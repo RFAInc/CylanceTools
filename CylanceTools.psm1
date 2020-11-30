@@ -288,21 +288,21 @@ function Uninstall-Cylance {
         
         $origErrorActionPreference = $ErrorActionPreference
         Write-Verbose -Message [string]('Attempting Command (1): ' + $strUninstall)
-        Invoke-Expression $strUninstall -ea Stop
+        Invoke-Command $strUninstall -ea Stop
 
     } Catch {
 
         Try {
             $ErrorActionPreference = 'Stop'
-            $sbUninstall = [scriptblock]::Create($strUninstall)
+            #$sbUninstall = [scriptblock]::Create($strUninstall)
             Write-Verbose -Message [string]('Attempting Command (2): ' + $strUninstall)
-            & $sbUninstall
+            Invoke-Command $strUninstall
         } Catch {
             $ErrorActionPreference = 'SilentlyContinue'
-            [string]$strFinalString = '& ' + $strUninstall
-            $sbUninstall = [scriptblock]::Create($strFinalString)
+            #[string]$strFinalString = '& ' + $strUninstall
+            #$sbUninstall = [scriptblock]::Create($strFinalString)
             Write-Verbose -Message [string]('Attempting Command (3): ' + $strUninstall)
-            & $sbUninstall
+            Invoke-Command $strUninstall
         }
 
     } Finally {
