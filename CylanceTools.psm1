@@ -169,7 +169,8 @@ function Get-CylanceUninstallString {
         [string]
         $LogPath = 'c:\windows\temp\cylance-remove.log',
         
-        [switch]$Verbose
+		#This line doesn't play nice with Powershell v2, removing it for testing 
+        #[switch]$Verbose
     )
     
     begin {
