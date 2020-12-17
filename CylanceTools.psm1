@@ -167,10 +167,10 @@ function Get-CylanceUninstallString {
         # Path to log file for MSI case only
         [Parameter()]
         [string]
-        $LogPath = 'c:\windows\temp\cylance-remove.log'
+        $LogPath = 'c:\windows\temp\cylance-remove.log',
         
-		#This line doesn't play nice with Powershell v2, removing it for testing 
-        #[switch]$Verbose
+		
+        [switch]$Verbose
     )
     
     begin {
@@ -212,7 +212,7 @@ function Get-CylanceUninstallString {
         $strUninstall = Get-InstalledSoftware |
             Where-Object {$_.Name -like 'Cylance*'} |
             Select-Object -ExpandProperty UninstallCommand
-        #Write-Verbose "Uninstall string found: $($strUninstall)" -Verbose:$Verbose
+        Write-Verbose "Uninstall string found: $($strUninstall)" -Verbose:$Verbose
     }
     
     process {
@@ -237,7 +237,7 @@ function Get-CylanceUninstallString {
         # Isolate my case
         $objCase = $Cases | Where-Object {$_.Case -eq $foundCase}
 
-        #Write-Verbose "Processing final Uninstall string..." -Verbose:$Verbose
+        Write-Verbose "Processing final Uninstall string..." -Verbose:$Verbose
         switch ($foundCase) {
             1 {
                 # Extract the GUId from the uninstall string
