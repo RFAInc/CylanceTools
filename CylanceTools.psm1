@@ -257,10 +257,10 @@ function Get-CylanceUninstallString {
             Default {throw 'unhandled case'}
         }#END switch ($foundCase)
 
-        Write-Output $strFinalString
+        Write-Output " $($strFinalString) "
         
     }#END end
-}
+}#END function Get-CylanceUninstallString
 
 function Uninstall-Cylance {
     <#
