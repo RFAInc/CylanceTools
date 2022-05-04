@@ -177,7 +177,7 @@ function Get-CylanceUninstallString {
         # Load some external functions
         $web = New-Object Net.WebClient
         $TheseFunctionsForPstFileInfo = @(
-            'https://raw.githubusercontent.com/tonypags/PsWinAdmin/master/Get-InstalledSoftware.ps1'
+            'https://raw.githubusercontent.com/RFAInc/PsWinAdmin/master/Get-InstalledSoftware.ps1'
         )
         Foreach ($uri in $TheseFunctionsForPstFileInfo) {
             $web.DownloadString($uri) | Invoke-Expression
